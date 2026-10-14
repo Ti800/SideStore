@@ -71,6 +71,7 @@ public enum AppConstants {
         // Proxied from upstream SideSign
         public static let defaultClientInfo           = Constants.Anisette.defaultClientInfo
         public static let defaultUserAgent            = Constants.Anisette.defaultUserAgent
+        public static let legacyClientInfos           = Constants.Anisette.legacyClientInfos
 
         public enum URLs {
             public static let grandSlamLookup = Constants.Anisette.URLs.grandSlamLookup
