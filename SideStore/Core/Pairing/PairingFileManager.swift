@@ -171,8 +171,14 @@ final class PairingFileManager: NSObject {
             persistedActiveProtocol = parsed.mode
             try? fm.removeItem(at: legacyURL)
             debugLog("[PairingFile] Imported legacy pairing file as \(parsed.mode.rawValue)")
-            if let preferred = preferredProtocol, preferred != parsed.mode, hasPairingFile(for: preferred) {
-                debugLog("[PairingFile] Preferred protocol is \(preferred.rawValue), its existing pairing file stays in use over the imported \(parsed.mode.rawValue) one")
+            if let preferred = preferredProtocol, preferred != parsed.mode {
+                if hasPairingFile(for: preferred) {
+                    debugLog("[PairingFile] Preferred protocol is \(preferred.rawValue), its existing pairing file stays in use over the imported \(parsed.mode.rawValue) one")
+                } else {
+                    // Nothing to honor the preference with, and startMinimuxer would parse the imported file with it and fail
+                    preferredProtocol = parsed.mode
+                    debugLog("[PairingFile] Preferred \(preferred.rawValue) pairing file is missing, switched preference to imported \(parsed.mode.rawValue)")
+                }
             }
             return true
         } catch {

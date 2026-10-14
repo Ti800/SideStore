@@ -156,6 +156,11 @@ final class PairingViewController: NSObject {
                 self.completion?(nil)
                 return
             }
+            // Only present when it will show, so completion runs exactly once (either here or after OK)
+            guard hostVC.presentedViewController == nil, hostVC.viewIfLoaded?.window != nil else {
+                completion(nil)
+                return
+            }
             let alert = UIAlertController(
                 title: NSLocalizedString("Import Error", comment: ""),
                 message: error.localizedDescription,
@@ -165,10 +170,6 @@ final class PairingViewController: NSObject {
                 self.presentPairingFileAlert(on: hostVC, isRetry: true, completion: completion)
             })
             hostVC.present(alert, animated: true)
-            if alert.presentingViewController == nil {
-                // Presentation refused (something else is on screen), don't leave the caller waiting
-                completion(nil)
-            }
         }
     }
 }
