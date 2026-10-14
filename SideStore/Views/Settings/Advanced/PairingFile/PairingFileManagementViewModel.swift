@@ -78,7 +78,7 @@ public final class PairingFileManagementViewModel: ObservableObject {
     public func handleImportResult(_ result: Result<URL, Error>) {
         switch result {
         case .success(let url):
-            guard let (_, parsed) = try? PairingFileManager.shared.inspectPairingFile(from: url, combinedPreference: targetImportMode) else {
+            guard let (content, parsed) = try? PairingFileManager.shared.inspectPairingFile(from: url, combinedPreference: targetImportMode) else {
                 do {
                     try PairingFileManager.shared.importPairingFile(from: url, preferred: targetImportMode)
                     targetImportMode = nil
@@ -90,7 +90,9 @@ public final class PairingFileManagementViewModel: ObservableObject {
             }
 
             let savedPref = preferredProtocol ?? targetImportMode
-            if let saved = savedPref, parsed.mode != saved {
+            // A combined file carries both protocols and both get stored, so there is no mismatch to resolve
+            let isCombined = CombinedPairingFile.split(content: content) != nil
+            if let saved = savedPref, parsed.mode != saved, !isCombined {
                 presentProtocolMismatchAlert(saved: saved, provided: parsed.mode, url: url)
                 return
             }

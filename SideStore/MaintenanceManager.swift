@@ -203,9 +203,7 @@ private extension MaintenanceManager {
     }
 
     func migratePairingFiles() async {
-        // Same import also runs on every boot (AppBootManager) for files placed later by iloader/idevice_pair
-        if PairingFileManager.shared.importLegacyPairingFileIfPresent() {
-            debugLog("[MaintenanceManager] Migrated legacy pairing file.")
-        }
+        // Legacy ALTPairingFile import moved to the boot sequence (AppBootManager) so files placed
+        // later by iloader/idevice_pair are picked up too; nothing left to do once per install.
     }
 }

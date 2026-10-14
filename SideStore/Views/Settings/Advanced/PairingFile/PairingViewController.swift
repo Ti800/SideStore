@@ -143,7 +143,7 @@ final class PairingViewController: NSObject {
         )
     }
     @MainActor
-    private func finalizeImport(from url: URL) {
+    private func finalizeImport(from url: URL, presentingOn vc: UIViewController?) {
         do {
             debugLog("[PairingFile] User picked pairing file from: \(url.path)")
             try PairingFileManager.shared.importPairingFile(from: url)
@@ -151,7 +151,8 @@ final class PairingViewController: NSObject {
         } catch {
             debugLog("[PairingFile] Error importing pairing file: \(error)")
             // Show why the import failed instead of treating it like the user cancelled
-            guard let completion = self.completion, let topVC = UIApplication.shared.topViewController() else {
+            // Must run after the document picker is dismissed, otherwise the alert is dismissed along with it
+            guard let completion = self.completion, let hostVC = vc ?? UIApplication.shared.topViewController() else {
                 self.completion?(nil)
                 return
             }
@@ -161,9 +162,13 @@ final class PairingViewController: NSObject {
                 preferredStyle: .alert
             )
             alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default) { _ in
-                self.presentPairingFileAlert(on: topVC, isRetry: true, completion: completion)
+                self.presentPairingFileAlert(on: hostVC, isRetry: true, completion: completion)
             })
-            topVC.present(alert, animated: true)
+            hostVC.present(alert, animated: true)
+            if alert.presentingViewController == nil {
+                // Presentation refused (something else is on screen), don't leave the caller waiting
+                completion(nil)
+            }
         }
     }
 }
@@ -181,23 +186,24 @@ extension PairingViewController: UIDocumentPickerDelegate {
         let presentingVC = controller.presentingViewController
 
         guard let (content, parsed) = try? PairingFileManager.shared.inspectPairingFile(from: url) else {
-            finalizeImport(from: url)
-            controller.dismiss(animated: true, completion: nil)
+            controller.dismiss(animated: true) { [weak self] in
+                self?.finalizeImport(from: url, presentingOn: presentingVC)
+            }
             return
         }
 
         controller.dismiss(animated: true) { [weak self] in
             guard let self = self else { return }
             guard let presenting = presentingVC else {
-                self.finalizeImport(from: url)
+                self.finalizeImport(from: url, presentingOn: presentingVC)
                 return
             }
 
             Task { @MainActor in
                 if await self.handlePotentialProtocolMismatch(on: presenting, pairingContent: content) {
-                    self.finalizeImport(from: url)
+                    self.finalizeImport(from: url, presentingOn: presentingVC)
                 } else if PairingFileManager.shared.preferredProtocol == parsed.mode || PairingFileManager.shared.preferredProtocol == nil {
-                    self.finalizeImport(from: url)
+                    self.finalizeImport(from: url, presentingOn: presentingVC)
                 } else {
                     self.presentPairingFileAlert(on: presenting, isRetry: true, completion: self.completion)
                 }
