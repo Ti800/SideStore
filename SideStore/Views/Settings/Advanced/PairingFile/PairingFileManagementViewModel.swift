@@ -78,7 +78,7 @@ public final class PairingFileManagementViewModel: ObservableObject {
     public func handleImportResult(_ result: Result<URL, Error>) {
         switch result {
         case .success(let url):
-            guard let (_, parsed) = try? PairingFileManager.shared.inspectPairingFile(from: url) else {
+            guard let (_, parsed) = try? PairingFileManager.shared.inspectPairingFile(from: url, combinedPreference: targetImportMode) else {
                 do {
                     try PairingFileManager.shared.importPairingFile(from: url, preferred: targetImportMode)
                     targetImportMode = nil

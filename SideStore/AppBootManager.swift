@@ -129,6 +129,8 @@ public final class AppBootManager {
         async let minimuxerCheck: Void = {
             debugLog("[AppBootManager] performBootSequence(): Minimuxer check starting")
             defer { debugLog("[AppBootManager] performBootSequence(): Minimuxer check completed") }
+            // Pick up a pairing file dropped into Documents by iloader/idevice_pair since the last launch
+            PairingFileManager.shared.importLegacyPairingFileIfPresent()
             guard let pf = PairingFileManager.shared.fetchPairingFile() else {
                 #if !targetEnvironment(simulator)
                 self.needsPairingPrompt = true

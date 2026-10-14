@@ -150,7 +150,20 @@ final class PairingViewController: NSObject {
             self.completion?(url)
         } catch {
             debugLog("[PairingFile] Error importing pairing file: \(error)")
-            self.completion?(nil)
+            // Show why the import failed instead of treating it like the user cancelled
+            guard let completion = self.completion, let topVC = UIApplication.shared.topViewController() else {
+                self.completion?(nil)
+                return
+            }
+            let alert = UIAlertController(
+                title: NSLocalizedString("Import Error", comment: ""),
+                message: error.localizedDescription,
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default) { _ in
+                self.presentPairingFileAlert(on: topVC, isRetry: true, completion: completion)
+            })
+            topVC.present(alert, animated: true)
         }
     }
 }
